@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Διακοσμητικά Χειροποίητα</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3" defer></script>
+  <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR"></script>
+</head>
+<body class="bg-gray-50 text-gray-800" x-data="{
+  cart: [],
+  addToCart(product) { this.cart.push(product); },
+  total() { return this.cart.reduce((sum, p) => sum + p.price, 0).toFixed(2); },
+  paymentMethod: 'card',
+  renderPaypal() {
+    if (this.paymentMethod === 'paypal') {
+      setTimeout(() => {
+        if (document.getElementById('paypal-button-container').children.length === 0) {
+          paypal.Buttons({
+            createOrder: function(data, actions) {
+              return actions.order.create({
+                purchase_units: [{ amount: { value: document.querySelector('[x-text=\"total() + \\\'€\\'\"]')?.textContent?.replace('€', '') || '0.00' } }]
+              });
+            },
+            onApprove: function(data, actions) {
+              return actions.order.capture().then(function(details) {
+                alert('Σας ευχαριστούμε για την πληρωμή, ' + details.payer.name.given_name + '!');
+              });
+            }
+          }).render('#paypal-button-container');
+        }
+      }, 200);
+    }
+  }
+}" x-effect="renderPaypal()">
+
+<!-- Header -->
+<header class="bg-white shadow p-4 mb-8">
+  <h1 class="text-3xl font-bold text-center">Queen Accessories</h1>
+  <p class="text-center text-gray-500">Χειροποίητα Διακοσμητικά από Υγρό Γυαλί και Πορσελάνη</p>
+</header>
+
+<!-- Product Grid -->
+<main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4 pb-32">
+  <template x-for="product in [
+    { name: 'Μενταγιόν από υγρό γυαλί', price: 18.00, image: 'https://via.placeholder.com/300x200?text=Μενταγιόν' },
+    { name: 'Διακοσμητικό πορσελάνινο πιάτο', price: 25.00, image: 'https://via.placeholder.com/300x200?text=Πιάτο' },
+    { name: 'Βάζο από υγρό γυαλί', price: 32.00, image: 'https://via.placeholder.com/300x200?text=Βάζο' }
+  ]" :key="product.name">
+    <div class="bg-white rounded shadow p-4 flex flex-col items-center">
+      <img :src="product.image" alt="" class="w-full h-48 object-cover rounded mb-4">
+      <h2 class="text-lg font-semibold mb-2" x-text="product.name"></h2>
+      <p class="text-gray-600 mb-2" x-text="product.price.toFixed(2) + '€'"></p>
+      <button @click="addToCart(product)" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Προσθήκη στο καλάθι</button>
+    </div>
+  </template>
+</main>
+
+<!-- Cart Sidebar -->
+<div class="fixed right-0 top-0 h-full w-80 bg-white shadow-lg p-6 z-50" x-show="cart.length > 0" style="display: none;">
+  <h2 class="text-xl font-bold mb-4">Το καλάθι μου</h2>
+  <template x-for="(item, index) in cart" :key="index">
+    <div class="border-b pb-2 mb-2">
+      <p class="font-semibold" x-text="item.name"></p>
+      <p class="text-sm text-gray-600" x-text="item.price.toFixed(2) + '€'"></p>
+    </div>
+  </template>
+  <div class="mt-4 font-bold">Σύνολο: <span x-text="total() + '€'"></span></div>
+
+  <div class="mt-4">
+    <h3 class="font-semibold mb-2">Τρόπος Πληρωμής:</h3>
+    <select class="w-full p-2 border rounded" x-model="paymentMethod" @change="renderPaypal()">
+      <option value="card">Πιστωτική/Χρεωστική Κάρτα</option>
+      <option value="paypal">PayPal</option>
+      <option value="cod">Αντικαταβολή</option>
+    </select>
+  </div>
+
+  <template x-if="paymentMethod === 'paypal'">
+    <div id="paypal-button-container" class="mt-4"></div>
+  </template>
+
+  <template x-if="paymentMethod !== 'paypal'">
+    <button class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+      Πληρωμή με <span x-text="paymentMethod === 'card' ? 'Κάρτα' : 'Αντικαταβολή'"></span>
+    </button>
+  </template>
+</div>
+
+</body>
+</html>
